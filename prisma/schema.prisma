@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  firebaseUid    String    @unique
+  email          String
+  displayName    String?
+  avatarUrl      String?
+  totalXp        Int       @default(0)
+  level          Int       @default(1)
+  dailyAiCount   Int       @default(0)
+  lastAiReset    DateTime  @default(now())
+  streakCount    Int       @default(0)
+  lastActiveDate DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  workoutCompletions WorkoutCompletion[]
+  mealLogs           MealLog[]
+  aiLogs             AiLog[]
+  xpTransactions     XpTransaction[]
+
+  @@index([firebaseUid])
+}
+
+model Workout {
+  id         String   @id @default(uuid())
+  title      String
+  duration   Int
+  difficulty String
+  xpReward   Int
+  createdAt  DateTime @default(now())
+
+  completions WorkoutCompletion[]
+}
+
+model WorkoutCompletion {
+  id        String   @id @default(uuid())
+  userId    String
+  workoutId String
+  xpAwarded Int
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  workout Workout @relation(fields: [workoutId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([userId, workoutId, createdAt])
+}
+
+model MealLog {
+  id        String   @id @default(uuid())
+  userId    String
+  calories  Float
+  protein   Float
+  carbs     Float
+  fats      Float
+  xpAwarded Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+model AiLog {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String   @db.Text
+  response  String   @db.Text
+  xpAwarded Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+model XpTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int
+  source    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([userId, source, createdAt])
+}
